@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          repository: "elmatica/github-actions"
       - uses: actions/setup-ruby@v1
         with:
           ruby-version: "2.7"
