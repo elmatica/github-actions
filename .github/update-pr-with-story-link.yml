@@ -19,4 +19,4 @@ jobs:
         with:
           ruby-version: "2.7"
       - name: Update PR body with pivotal story link
-        run: ./bin/update-pr-with-story-link '${{ pr_url }}' '${{ token }}'
+        run: ./bin/update-pr-with-story-link '${{ inputs.pr_url }}' '${{ secrets.token }}'
