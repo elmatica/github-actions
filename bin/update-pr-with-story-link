@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+
+require "net/http"
+require "json"
+
+def handle_error(response)
+  status = response.code.to_i
+  puts "Status code is: #{status}"
+
+  if status < 200 || status >= 300
+    raise "Unexpected response status: #{status}"
+  end
+end
+
+def get_pr(url, token)
+  uri = URI(url)
+
+  Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
+    req = Net::HTTP::Get.new(uri)
+    req["Authorization"] = "Bearer #{token}"
+
+    response = http.request req
+    handle_error(response)
+    return JSON.parse(response.body)
+  end
+end
+
+def update_pr(url, token, params)
+  uri = URI(url)
+
+  Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
+    req = Net::HTTP::Patch.new(uri)
+    req["Authorization"] = "Bearer #{token}"
+    req["Content-Type"] = "application/json"
+    req.body = JSON.generate(params)
+
+    response = http.request req
+    handle_error(response)
+    return JSON.parse(response.body)
+  end
+end
+
+pull_request_url = ARGV[0]
+github_token = ARGV[1]
+puts "Running for PR: #{pull_request_url}"
+pr = get_pr(pull_request_url, github_token)
+branch_name = pr.fetch("head").fetch("ref")
+puts "Branch name is: #{branch_name.inspect}"
+if branch_name.start_with?("dependabot")
+  puts "Skipping dependabot PR"
+  exit 0
+end
+
+title = pr.fetch("title")
+body = pr.fetch("body")
+matches = title.match(/^#(\d+)/)
+if matches.nil?
+  $stderr.puts "PR title is missing a Pivotal Tracker story ID"
+  exit 1
+end
+
+story_id = matches[1]
+new_body = <<~MD
+  [Pivotal story](https://www.pivotaltracker.com/story/show/#{story_id})
+
+  #{body}
+MD
+
+update_pr(pull_request_url, github_token, body: new_body)

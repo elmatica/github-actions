@@ -1,0 +1,22 @@
+name: Update PR body with pivotal story link
+
+on:
+  workflow_call:
+    inputs:
+      pr_url:
+        description: "Pull request URL to add the pivotal link to"
+        required: true
+    secrets:
+      token:
+        required: true
+
+jobs:
+  update_pr_body:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-ruby@v1
+        with:
+          ruby-version: "2.7"
+      - name: Update PR body with pivotal story link
+        run: ./bin/update-pr-with-story-link '${{ pr_url }}' '${{ token }}'
